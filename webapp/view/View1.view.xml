@@ -1,0 +1,147 @@
+<mvc:View
+    controllerName="serviceapproval.controller.View1"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:f="sap.ui.layout.form"
+    displayBlock="true">
+
+    <Page title="Service Sheet Approval">
+        <content>
+
+            <VBox class="sapUiContentPadding">
+
+                <!--  INPUT SECTION  -->
+                <Panel
+                    headerText="Service Sheet Approval"
+                    class="sapUiResponsiveMargin">
+
+                    <f:SimpleForm
+                        editable="true"
+                        layout="ResponsiveGridLayout"
+                        labelSpanL="3"
+                        labelSpanM="3"
+                        labelSpanS="12"
+                        columnsL="2"
+                        columnsM="2"
+                        columnsS="1">
+
+                        <Label text="User"/>
+                        <Input
+                            id="idUser"
+                            placeholder="Enter User"
+                            maxLength="50"/>
+
+                        <Label text="Service Sheet Number"/>
+                        <Input
+                            id="idSheet"
+                            placeholder="Enter Service Number"
+                            maxLength="10"/>
+
+                    </f:SimpleForm>
+
+                    <HBox
+                        justifyContent="Center"
+                        wrap="Wrap"
+                        class="sapUiMediumMarginTop">
+
+                        <Button
+                            text="Details"
+                            type="Emphasized"
+                            press="onLoadDetails"
+                            icon="sap-icon://display"/>
+
+                        <Button
+                            text="Approve"
+                            type="Accept"
+                            press="onApprove"
+                            icon="sap-icon://accept"
+                            class="sapUiSmallMarginBegin"
+                            enabled="{ui>/detailsLoaded}"/>
+
+                        <Button
+                            text="Reject"
+                            type="Reject"
+                            press="onReject"
+                            icon="sap-icon://decline"
+                            class="sapUiSmallMarginBegin"
+                            enabled="{ui>/detailsLoaded}"/>
+
+                    </HBox>
+                </Panel>
+             
+                 <!-- HEADER DETAILS 
+                <Panel
+                    headerText="Service Sheet Details"
+                    visible="{detail>/EntrSheet}"
+                    class="sapUiResponsiveMargin">
+
+                    <f:SimpleForm
+                        editable="false"
+                        layout="ResponsiveGridLayout"
+                        labelSpanL="3"
+                        labelSpanM="3"
+                        labelSpanS="12"
+                        columnsL="2"
+                        columnsM="2"
+                        columnsS="1">
+
+                        <Label text="Entry Sheet"/>
+                        <Text text="{detail>/EntrSheet}"/>
+
+                        <Label text="PO Number"/>
+                        <Text text="{detail>/Po_No}"/>
+
+                        <Label text="Vendor"/>
+                        <Text text="{detail>/Vendor}"/>
+
+                        <Label text="Plant"/>
+                        <Text text="{detail>/Plant}"/>
+
+                        <Label text="Company Code"/>
+                        <Text text="{detail>/CompCode}"/>
+
+                        <Label text="Created Date"/>
+                        <Text text="{detail>/Creadt}"/>
+
+                        <Label text="Created By"/>
+                        <Text text="{detail>/CreaBy}"/>
+
+                        <Label text="Message"/>
+                        <Text text="{detail>/Message}" wrapping="true"/>
+
+                    </f:SimpleForm>
+                </Panel> -->
+
+                <!-- SES ITEMS  -->
+                <Panel
+                    headerText="Service Entry Items"
+                    visible="{= ${items>/}.length > 0 }"
+                    class="sapUiResponsiveMargin">
+
+                    <Table items="{items>/}">
+                        <columns>
+                            <Column><Text text="Line"/></Column>
+                            <Column><Text text="Service No"/></Column>
+                            <Column><Text text="Description"/></Column>
+                            <Column><Text text="Quantity"/></Column>
+                            <Column><Text text="Net Value"/></Column>
+                        </columns>
+
+                        <items>
+                            <ColumnListItem>
+                                <cells>
+                                    <Text text="{items>Line}"/>
+                                    <Text text="{items>ServiceNo}"/>
+                                    <Text text="{items>ShortText}"/>
+                                    <Text text="{items>Quantity}"/>
+                                    <Text text="{items>NetValue}"/>
+                                </cells>
+                            </ColumnListItem>
+                        </items>
+                    </Table>
+                </Panel>
+
+            </VBox>
+        </content>
+    </Page>
+</mvc:View>
