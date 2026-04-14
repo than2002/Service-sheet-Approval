@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "deploy.mta.cf",
+			"label": "Deploy MTA to Cloud Foundry: service-approval//home/user/projects/service-approval/mta_archives/serviceapproval_0.0.1.mtar",
+			"taskType": "Deploy",
+			"mtarPath": "/home/user/projects/service-approval/mta_archives/serviceapproval_0.0.1.mtar",
+			"cfTarget": "",
+			"cfEndpoint": "",
+			"cfOrg": "",
+			"cfSpace": "",
+			"extensions": []
+		}
+	]
+}
