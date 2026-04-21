@@ -22,15 +22,15 @@
                         labelSpanM="3"
                         labelSpanS="12"
                         columnsL="2"
-                        columnsM="2"
-                        columnsS="1">
+                        columnsM="2">
+                        
 
-                        <Label text="User"/>
+                        <!-- <Label text="User"/>
                         <Input
                             id="idUser"
                             placeholder="Enter User ID"
                             width="300px"
-                            />
+                            /> -->
 
                         <Label text="Service Sheet Number"/>
                         <Input
@@ -102,16 +102,17 @@
                             <Column>
                                 <Text text="Description"/>
                             </Column>
-                            <Column hAlign="End">
+                            <Column >
                                 <Text text="Quantity"/>
                             </Column>
-                            <Column hAlign="End">
+                            <Column >
                                 <Text text="Net Value"/>
                             </Column>
-                            <Column hAlign="End">
+                            <Column >
                                 <Text text="Gross Price"/>
                             </Column>
                             <Column>
+                            
                                 <Text text="UOM"/>
                             </Column>
                         </columns>

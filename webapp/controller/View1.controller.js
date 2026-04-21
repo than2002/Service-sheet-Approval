@@ -24,21 +24,18 @@ sap.ui.define([
         },
 
         
-      _getLoggedInUser: function () {
-            var oUserInput = this.byId("idUser");
-            if(oUserInput) {
-                var sUser = oUserInput.getValue().trim();
-                if(sUser){
-                    return sUser.toUpperCase();
+        _getLoggedInUser: function () {
+            try {
+                if (sap.ushell && sap.ushell.Container) {
+                    return sap.ushell.Container
+                        .getUser()
+                        .getId()
+                        .toUpperCase();
                 }
-            }    
-
-            
+            } catch (e) {}
             return "";
         },
-
-
-        
+         
         _extractErrorMessage: function (oError) {
             var sMessage = "Something went wrong";
 
@@ -207,6 +204,7 @@ sap.ui.define([
 
         
         _callApproveReject: function (sAction) {
+           
             var oView = this.getView();
             var oUI = oView.getModel("ui");
             var that = this;
@@ -234,7 +232,7 @@ sap.ui.define([
                 oUI.setProperty("/detailsLoaded", false);
                 return;
             }
-
+            oUI.setProperty("/detailsLoaded", false);
             oView.setBusy(true);
             oView.getModel().setUseBatch(false);
 
