@@ -10,117 +10,280 @@ sap.ui.define([
 
     return Controller.extend("serviceapproval.controller.View1", {
 
-       
+        
         onInit: function () {
             this.getView().setModel(
                 new JSONModel({
-                    detailsLoaded: false
+                    detailsLoaded: false,
+                    currentSheet: ""
                 }),
                 "ui"
             );
+
+            this.getView().setModel(new JSONModel([]), "items");
         },
 
-        /* LOAD DETAILS  */
-        onLoadDetails: function () {
+        
+        _getLoggedInUser: function () {
+           
+            try {
+                if (sap.ushell && sap.ushell.Container) {
+                    return sap.ushell.Container
+                        .getUser()
+                        .getEmail()
+                        // .getId()
+                        .toUpperCase();
+                }
+            } catch (e) {}
+            return "";
+        },
+         
+        _extractErrorMessage: function (oError) {
+            var sMessage = "Something went wrong";
 
-            var sSheet = this.byId("idSheet").getValue();
+            try {
+                if (oError && oError.responseText) {
+                    var oErrObj = JSON.parse(oError.responseText);
+
+                    if (oErrObj.error && oErrObj.error.message && oErrObj.error.message.value) {
+                        sMessage = oErrObj.error.message.value;
+                    }
+
+                    if (
+                        oErrObj.error &&
+                        oErrObj.error.innererror &&
+                        oErrObj.error.innererror.errordetails &&
+                        oErrObj.error.innererror.errordetails.length > 0
+                    ) {
+                        var aDetails = oErrObj.error.innererror.errordetails
+                            .filter(function (oItem) {
+                                return oItem.message;
+                            })
+                            .map(function (oItem) {
+                                return oItem.message;
+                            });
+
+                        if (aDetails.length > 0) {
+                            sMessage = aDetails.join("\n");
+                        }
+                    }
+                } else if (oError && oError.message) {
+                    sMessage = oError.message;
+                }
+            } catch (e) {
+                
+            }
+
+            return sMessage;
+        },
+
+        
+        _validateSheetInput: function () {
+            var oInput = this.byId("idSheet");
+            var sSheet = oInput.getValue().trim();
+
+            oInput.setValue(sSheet);
+
             if (!sSheet) {
-                MessageBox.warning("Please enter Service Sheet Number");
+                oInput.setValueState("Error");
+                oInput.setValueStateText("Service Sheet Number is required");
+                MessageBox.error("Please enter Service Sheet Number");
+                return false;
+            }
+
+            if (!/^\d+$/.test(sSheet)) {
+                oInput.setValueState("Error");
+                oInput.setValueStateText("Only numeric Service Sheet Number is allowed");
+                MessageBox.error("Only numeric Service Sheet Number is allowed");
+                return false;
+            }
+
+            if (sSheet.length < 8 || sSheet.length > 10) {
+                oInput.setValueState("Error");
+                oInput.setValueStateText("Enter valid Service Sheet Number");
+                MessageBox.error("Enter valid Service Sheet Number");
+                return false;
+            }
+
+            oInput.setValueState("None");
+            oInput.setValueStateText("");
+            return true;
+        },
+
+        
+       
+        onSheetLiveChange: function (oEvent) {
+            var oInput = oEvent.getSource();
+            var sValue = oInput.getValue();
+
+            // allow only digits
+            sValue = sValue.replace(/[^\d]/g, "");
+            oInput.setValue(sValue);
+
+            // disable approve/reject until details reloaded
+            this.getView().getModel("ui").setProperty("/detailsLoaded", false);
+            this.getView().getModel("ui").setProperty("/currentSheet", "");
+
+            // clear old table data
+            this.getView().getModel("items").setData([]);
+
+            if (!sValue) {
+                oInput.setValueState("None");
+                oInput.setValueStateText("");
                 return;
             }
 
-            var oView  = this.getView();
+            if (sValue.length < 8) {
+                oInput.setValueState("Warning");
+                oInput.setValueStateText("Service Sheet Number looks incomplete");
+            } else {
+                oInput.setValueState("None");
+                oInput.setValueStateText("");
+            }
+        },
+
+       
+        // LOAD DETAILS
+       
+        onLoadDetails: function () {
+            if (!this._validateSheetInput()) {
+                return;
+            }
+
+            var oView = this.getView();
             var oModel = oView.getModel();
+            var sSheet = this.byId("idSheet").getValue().trim();
+            var that = this;
 
             oView.setBusy(true);
 
-            /*  ITEMS  */
             oModel.read("/SESItemSet", {
                 filters: [
                     new Filter("EntrSheet", FilterOperator.EQ, sSheet)
                 ],
                 success: function (oData) {
-                    oView.setModel(
-                        new JSONModel(oData.results),
-                        "items"
-                    );
+                    var aResults = oData.results || [];
 
-                    //   details viewed
+                    if (aResults.length === 0) {
+                        oView.setBusy(false);
+                        oView.getModel("items").setData([]);
+                        oView.getModel("ui").setProperty("/detailsLoaded", false);
+                        oView.getModel("ui").setProperty("/currentSheet", "");
+                        MessageBox.error("No data found for Service Sheet Number: " + sSheet);
+                        return;
+                    }
+
+                    oView.getModel("items").setData(aResults);
                     oView.getModel("ui").setProperty("/detailsLoaded", true);
-
+                    oView.getModel("ui").setProperty("/currentSheet", sSheet);
                     oView.setBusy(false);
+
+                    MessageToast.show("Details loaded successfully");
                 },
-                error: function () {
+                error: function (oError) {
                     oView.setBusy(false);
-                    MessageBox.error("Failed to load Service Entry Items");
-                }
-            });
+                    oView.getModel("items").setData([]);
+                    oView.getModel("ui").setProperty("/detailsLoaded", false);
+                    oView.getModel("ui").setProperty("/currentSheet", "");
 
-            /* -------- HEADER (OPTIONAL – FUTURE USE)
-            oModel.read("/ZET_SES_RESPSet('" + sSheet + "')", {
-                success: function (oData) {
-                    oView.setModel(new JSONModel(oData), "detail");
+                    MessageBox.error(that._extractErrorMessage(oError));
                 }
             });
-            -------- */
         },
 
-        /*  APPROVE / REJECT  */
+        // APPROVE
+        
         onApprove: function () {
             this._callApproveReject("A");
         },
 
+       
+        // REJECT
+      
         onReject: function () {
             this._callApproveReject("R");
         },
 
+        
         _callApproveReject: function (sAction) {
-
+           
             var oView = this.getView();
-            var oUI   = oView.getModel("ui");
+            var oUI = oView.getModel("ui");
+            var that = this;
 
-            /* DETAILS MUST BE VIEWED */
-            if (!oUI.getProperty("/detailsLoaded")) {
-                MessageBox.warning(
-                    "Please click Details and review the Service Sheet before Approve or Reject."
-                );
+            if (!this._validateSheetInput()) {
                 return;
             }
 
-            var sUser  = this.byId("idUser").getValue();
-            var sSheet = this.byId("idSheet").getValue();
+            if (!oUI.getProperty("/detailsLoaded")) {
+                MessageBox.warning("Please click Details first.");
+                return;
+            }
+
+            var sSheet = oView.byId("idSheet").getValue().trim();
+            var sLoadedSheet = oUI.getProperty("/currentSheet");
+            var sUser = this._getLoggedInUser();
 
             if (!sUser) {
-                MessageBox.warning("Please enter User");
+                MessageBox.error("Unable to identify logged-in user. Please login again.");
                 return;
             }
 
-            /* BACKEND CALL */
-            var oModel = oView.getModel();
-            oModel.setUseBatch(false);
-
+            if (sLoadedSheet !== sSheet) {
+                MessageBox.warning("Please click Details again after changing Service Sheet Number.");
+                oUI.setProperty("/detailsLoaded", false);
+                return;
+            }
+            oUI.setProperty("/detailsLoaded", false);
             oView.setBusy(true);
+            oView.getModel().setUseBatch(false);
 
-            oModel.callFunction("/ApproveSERES", {
+            oView.getModel().callFunction("/ApproveSERES", {
                 method: "POST",
                 urlParameters: {
                     EntrSheet: sSheet,
                     Action: sAction,
                     Uname: sUser
                 },
-                success: function () {
+                success: function (oData) {
                     oView.setBusy(false);
-                    MessageToast.show(
-                        sAction === "A"
-                            ? "Service Sheet Approved successfully"
-                            : "Service Sheet Rejected successfully"
+
+                    var sMsg = "";
+                    if (oData && oData.Message) {
+                        sMsg = oData.Message;
+                    }
+
+                    MessageBox.success(
+                        sMsg || (
+                            sAction === "A"
+                                ? "Service Sheet Approved successfully"
+                                : "Service Sheet Rejected successfully"
+                        )
                     );
+
+                   
+                    that._resetScreen();
                 },
-                error: function () {
+                error: function (oError) {
                     oView.setBusy(false);
-                    MessageBox.error("Approval / Rejection failed");
+                    MessageBox.error(that._extractErrorMessage(oError));
                 }
             });
-        }
+        },
+
+        
+        _resetScreen: function () {
+            var oView = this.getView();
+
+            oView.byId("idSheet").setValue("");
+            oView.byId("idSheet").setValueState("None");
+            oView.byId("idSheet").setValueStateText("");
+
+            oView.getModel("items").setData([]);
+            oView.getModel("ui").setProperty("/detailsLoaded", false);
+            oView.getModel("ui").setProperty("/currentSheet", "");
+
+            oView.byId("idSheet").focus();
+        },
     });
 });
