@@ -5,7 +5,7 @@
     xmlns:f="sap.ui.layout.form"
     displayBlock="true">
 
-    <Page title="Service Sheet Approval">
+    <Page title="">
         <content>
 
             <VBox class="sapUiContentPadding">

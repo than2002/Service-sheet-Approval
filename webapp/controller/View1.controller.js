@@ -25,11 +25,13 @@ sap.ui.define([
 
         
         _getLoggedInUser: function () {
+           
             try {
                 if (sap.ushell && sap.ushell.Container) {
                     return sap.ushell.Container
                         .getUser()
-                        .getId()
+                        .getEmail()
+                        // .getId()
                         .toUpperCase();
                 }
             } catch (e) {}
